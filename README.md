@@ -3,27 +3,26 @@
 Inspiration is a Ruby script creating a portfolio of images from an RSS feed.
 
 More exactly: 
-  1.  It takes a delicious.com RSS feed
-  2.  Scraps / screenshots webpages the feed items are pointing at
-  3.  Resizes images with ImageMagick to thumbnails and normal sizes
-  4.  Uploads images to Amazon S3
-  5.  Generates a HTML to show the portfolio
+  1. It takes a delicious.com RSS feed
+  2. Scraps / screenshots webpages the feed items are pointing at
+  3. Resizes images with ImageMagick to thumbnails and normal sizes
+  4. Uploads images to Amazon S3
+  5. Generates a HTML to show the portfolio
   
 
 ## Why?
 
 Check out the result: http://www.shopledge.com/portfolio/inspiration/
+
 The input was: http://feeds.delicious.com/v2/rss/csbartus/inspiration?count=100
 
 ## Based on
 
-`
-require 'simple-rss'
-require 'open-uri'
-require 'right_aws'
+simple-rss
+open-uri
+right_aws
+webkit2png.py
 
-python webkit2png.py
-`
 
 ## How it works?
 
@@ -58,16 +57,22 @@ IMG_TIMEOUT = 20 // for waiting for screenshots
 
 ### Amazon S3
 S3_ID = ""
+
 S3_KEY = ""
+
 S3_BUCKET = "bucket-name"
+
 S3_PUBLIC = 'https://s3-eu-west-1.amazonaws.com/' // right_aws doesn't get correctly the public link of the uploaded image
 
 
 
 ### HTML generation
 HTML_FILE = "inspiration.html"
+
 HTML_ITEM_PREFIX = '' // lists, divs, etc. ... containers for the image
+
 HTML_ITEM_SUFFIX = '' // Closing tag for PREFIX
+
 HTML_TOGGLE = '' // tags for toggle larger images. See source for example
 
 
