@@ -36,7 +36,16 @@ IMG_FILENAME_SIZE = 50
 S3_ID = "AKIAIM4EGICY766JY2PA"
 S3_KEY = "dJELxK7fO13rDAY0JLHa1TLSKDwNN21P1hy/dlvh"
 S3_BUCKET = "webdesign-inspiration"
+# right_aws doesn't get correctly the public link of the uploaded image
+S3_PUBLIC = 'https://s3-eu-west-1.amazonaws.com/'
 
+
+
+# HTML generation
+#
+HTML_FILE = "index.html"
+HTML_ITEM_PREFIX = '<div class="item">'
+HTML_ITEM_SUFFIX = '</div>'
 
 require 'simple-rss'
 require 'open-uri'
@@ -44,13 +53,26 @@ require 'right_aws'
 
 
 
-# Functions
-#
 
 
+# Generating HTML with images from Amazon AWS
+def generate_html()
+  html = ""
+  
+  s3 = RightAws::S3.new(S3_ID, S3_KEY)
+  bucket = s3.bucket(S3_BUCKET)
+  
+  bucket.keys.each do |key|
+    if key.full_name.include?(IMG_DIR)
+      html += HTML_ITEM_PREFIX + '<img src="' + S3_PUBLIC + key.full_name + '" />' + HTML_ITEM_SUFFIX
+    end
+  end
+  
+  File.open(HTML_FILE, 'a') { |f| f.write(html) }  
+end
 
 
-# Upload images to Amazon AWS S3
+# Uploading images to Amazon AWS S3
 def upload_images(dir)
   s3 = RightAws::S3.new(S3_ID, S3_KEY)  
     
@@ -97,6 +119,7 @@ def process_feed(url, limit=200)
   end  
 end
 
+
 # Create screenshoot
 # - if the screenshot already exists it will be skipped
 #
@@ -124,6 +147,6 @@ end
 
 #process_feed(RSS, 1)
 #process_images(IMG_DIR)
-upload_images(IMG_DIR)
-
+#upload_images(IMG_DIR)
+generate_html()
 
