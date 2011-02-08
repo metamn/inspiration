@@ -3,6 +3,7 @@
 Inspiration is a Ruby script creating a portfolio of images from an RSS feed.
 
 More exactly: 
+
   1. It takes a delicious.com RSS feed
   2. Scraps / screenshots webpages the feed items are pointing at
   3. Resizes images with ImageMagick to thumbnails and normal sizes
@@ -12,16 +13,17 @@ More exactly:
 
 ## Why?
 
-Check out the result: http://www.shopledge.com/portfolio/inspiration/
+Check out the result: [http://www.shopledge.com/portfolio/inspiration/](http://www.shopledge.com/portfolio/inspiration/)
 
-The input was: http://feeds.delicious.com/v2/rss/csbartus/inspiration?count=100
+The input was: [http://feeds.delicious.com/v2/rss/csbartus/inspiration?count=100](http://feeds.delicious.com/v2/rss/csbartus/inspiration?count=100)
 
 ## Based on
 
-simple-rss
-open-uri
-right_aws
-webkit2png.py
+  1. simple-rss
+  2. open-uri
+  3. right_aws
+  4. webkit2png.py
+  
 
 
 ## How it works?
@@ -80,4 +82,4 @@ HTML_TOGGLE = '' // tags for toggle larger images. See source for example
 ## Goodies
 
 This example @shopledge is equipped with the following Javascript to load larger images dinamically
-<script src="https://gist.github.com/816883.js?file=inspiration.js"></script> 
+[https://gist.github.com/816883](https://gist.github.com/816883)
