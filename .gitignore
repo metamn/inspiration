@@ -1,0 +1,11 @@
+images/
+images/**/*
+
+*.ttf
+*.svg
+*.eot
+*.woff
+*.xcf
+*.jpg
+*.png
+*.gif
