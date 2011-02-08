@@ -8,7 +8,7 @@
 # RSS
 # 
 # the feed 
-RSS = 'http://feeds.delicious.com/v2/rss/csbartus/inspiration'
+RSS = 'http://feeds.delicious.com/v2/rss/csbartus/inspiration?count=100'
 
 # Images
 #
@@ -30,6 +30,9 @@ IMG_FINAL = "_large"
 # image file name length
 IMG_FILENAME_SIZE = 50 
 
+# creating screenshot timeout in seconds
+IMG_TIMEOUT = 20
+
 
 # Amazon S3
 #
@@ -44,8 +47,11 @@ S3_PUBLIC = 'https://s3-eu-west-1.amazonaws.com/'
 # HTML generation
 #
 HTML_FILE = "index.html"
-HTML_ITEM_PREFIX = '<div class="item">'
+HTML_ITEM_PREFIX = '<div id="item">'
 HTML_ITEM_SUFFIX = '</div>'
+
+
+
 
 require 'simple-rss'
 require 'open-uri'
@@ -56,15 +62,26 @@ require 'right_aws'
 
 
 # Generating HTML with images from Amazon AWS
+# - there are included all image sizes: thumbnail, large and original
+# - each image have a class based on it's size
 def generate_html()
   html = ""
+  
+  puts "Generating HTML ..."
   
   s3 = RightAws::S3.new(S3_ID, S3_KEY)
   bucket = s3.bucket(S3_BUCKET)
   
   bucket.keys.each do |key|
     if key.full_name.include?(IMG_DIR)
-      html += HTML_ITEM_PREFIX + '<img src="' + S3_PUBLIC + key.full_name + '" />' + HTML_ITEM_SUFFIX
+      if key.full_name.include?(IMG_THUMB)
+        klass = "thumbnail"
+      elsif key.full_name.include?(IMG_FINAL)
+        klass = "large"
+      else
+        klass = "original"
+      end
+      html += HTML_ITEM_PREFIX + '<img class="' + klass + '" src="' + S3_PUBLIC + key.full_name + '" />' + HTML_ITEM_SUFFIX
     end
   end
   
@@ -73,14 +90,25 @@ end
 
 
 # Uploading images to Amazon AWS S3
+# - The bucket must be initially created, creating here at command line requires too much setup data (region, logging, permissions etc)
 def upload_images(dir)
   s3 = RightAws::S3.new(S3_ID, S3_KEY)  
-    
-  pattern = File.join("**", dir, "*.png")
-  files = Dir.glob(pattern)
-  files.each do |f|
-    puts "Uploading #{f}"
-    s3.bucket(S3_BUCKET).put(f, File.open(f), {}, 'public-read')
+  
+  unless s3.bucket(S3_BUCKET).nil?   
+    keys = s3.bucket(S3_BUCKET).keys.map {|k| k.to_s}
+     
+    pattern = File.join("**", dir, "*.png")
+    files = Dir.glob(pattern)
+    files.each do |f|
+      unless keys.include? f
+        puts "Uploading image #{f}"
+        s3.bucket(S3_BUCKET).put(f, File.open(f), {}, 'public-read')
+      else
+        puts "Already uploaded: #{f}"
+      end
+    end
+  else
+    puts "The bucket must be initially created, creating it command line requires too much setup data (region, logging, permissions etc)"
   end
 end
 
@@ -92,7 +120,7 @@ def process_images(dir)
   files = Dir.glob(pattern)
   files.each do |f|
     unless f.include?(IMG_THUMB) || f.include?(IMG_FINAL)
-      puts "Converting #{f}"
+      puts "Converting image #{f}"
       f2 = f.gsub /.png/, ''
       # thumbs
       system "convert #{f} -resize #{IMG_THUMB_SIZE}^ -extent #{IMG_THUMB_SIZE} #{f2}#{IMG_THUMB}.png" unless File.exists?("#{f2}#{IMG_THUMB}.png")
@@ -111,7 +139,7 @@ end
 def process_feed(url, limit=200)
   rss = SimpleRSS.parse open(url)
   rss.items.each_with_index do |item, index|
-    puts "Parsing #{item.title}"
+    puts "Parsing RSS item #{item.title}"
     screenshoot(item.link, to_filename(item.title, IMG_FILENAME_SIZE))
     puts "... donez"
     puts ""
@@ -127,12 +155,17 @@ end
 # - filename: where to save the screenshoot
 def screenshoot(url, filename)
   unless File.exists?("#{IMG_DIR}/#{filename}.png")
-    system "python webkit2png.py -t 10 -o #{IMG_DIR}/#{filename}.png #{url} "
+    system "python webkit2png.py -t #{IMG_TIMEOUT} -o #{IMG_DIR}/#{filename}.png #{url} "
   else 
     puts "Already screenshoted: #{IMG_DIR}/#{filename}.png"
   end
 end
 
+
+# Prepare the environment
+def prepare()
+  Dir.mkdir(IMG_DIR) unless Dir.exists?(IMG_DIR) 
+end
 
 
 # Sanitize feed title for image file name
@@ -145,8 +178,9 @@ def to_filename(filename, size)
 end
 
 
-#process_feed(RSS, 1)
-#process_images(IMG_DIR)
-#upload_images(IMG_DIR)
+prepare()
+process_feed(RSS, 110)
+process_images(IMG_DIR)
+upload_images(IMG_DIR)
 generate_html()
 
