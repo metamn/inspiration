@@ -46,10 +46,10 @@ S3_PUBLIC = 'https://s3-eu-west-1.amazonaws.com/'
 
 # HTML generation
 #
-HTML_FILE = "index.html"
+HTML_FILE = "inspiration.html"
 HTML_ITEM_PREFIX = '<div id="item">'
 HTML_ITEM_SUFFIX = '</div>'
-
+HTML_TOGGLE = '<div id="toggle"><span class="link large">Show large</span><span class="link original">Show original</span></div>'
 
 
 
@@ -62,9 +62,44 @@ require 'right_aws'
 
 
 # Generating HTML with images from Amazon AWS
-# - there are included all image sizes: thumbnail, large and original
-# - each image have a class based on it's size
+# - includes only thumbnails to not slow down the page in case you have hundreds of images to show
+# - the urls of larger images are included to manipulate later with Javascript
 def generate_html()
+  html = ""
+  
+  puts "Generating HTML ..."
+  
+  s3 = RightAws::S3.new(S3_ID, S3_KEY)
+  bucket = s3.bucket(S3_BUCKET)
+  
+  thumb = ''
+  original = ''
+  large = ''
+  bucket.keys.each do |key|
+    if key.full_name.include?(IMG_DIR)
+      if key.full_name.include?(IMG_THUMB)
+        thumb = S3_PUBLIC + key.full_name        
+      elsif key.full_name.include?(IMG_FINAL)
+        large = S3_PUBLIC + key.full_name
+      else
+        original = S3_PUBLIC + key.full_name
+      end      
+      
+      if thumb != '' && large != '' && original != ''
+        html += HTML_ITEM_PREFIX 
+        html += '<img class="thumbnail" src="' + thumb + '" rev="' + original + '" rel="' + large + '" />' 
+        html += HTML_TOGGLE  + HTML_ITEM_SUFFIX        
+        thumb = ''
+        original = ''
+        large = ''        
+      end
+    end
+  end
+  
+  File.open(HTML_FILE, 'a') { |f| f.write(html) }  
+end
+
+def generate_html2()
   html = ""
   
   puts "Generating HTML ..."
@@ -75,13 +110,14 @@ def generate_html()
   bucket.keys.each do |key|
     if key.full_name.include?(IMG_DIR)
       if key.full_name.include?(IMG_THUMB)
-        klass = "thumbnail"
+        html += HTML_ITEM_PREFIX 
+             + '<img class="' + klass + '" src="' + S3_PUBLIC + key.full_name + '" rev="' + 'rev' + '" rel="' + 'rel' +'" />' 
+             + HTML_ITEM_SUFFIX
       elsif key.full_name.include?(IMG_FINAL)
-        klass = "large"
+        rev = S3_PUBLIC + key.full_name
       else
-        klass = "original"
-      end
-      html += HTML_ITEM_PREFIX + '<img class="' + klass + '" src="' + S3_PUBLIC + key.full_name + '" />' + HTML_ITEM_SUFFIX
+        rel = S3_PUBLIC + key.full_name
+      end      
     end
   end
   
@@ -179,8 +215,8 @@ end
 
 
 prepare()
-process_feed(RSS, 110)
-process_images(IMG_DIR)
-upload_images(IMG_DIR)
+#process_feed(RSS, 110)
+#process_images(IMG_DIR)
+#upload_images(IMG_DIR)
 generate_html()
 
